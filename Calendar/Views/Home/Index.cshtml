@@ -1,0 +1,159 @@
+﻿@model Calendar.Models.SchemaActivity
+
+
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet" />
+</head>
+
+<h2>Aktivitetsschema</h2>
+<div id="calendar"></div>
+
+<div id="myModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"><span id="eventTitle"></span></h4>
+            </div>
+            <div class="modal-body">
+                <button id="btnDelete" class="btn btn-default btn-sm pull-right">
+                    <span class="glyphicon glyphicon-remove"></span> Remove
+                </button>
+                <button id="btnEdit" class="btn btn-default btn-sm pull-right" style="margin-right:5px;">
+                    <span class="glyphicon glyphicon-pencil"></span> Edit
+                </button>
+                <p id="pDetails"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="myModalSave" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Ny aktivitet</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal">
+               @*     <div class="form-group">
+                        <label>Användare</label>
+                        <select asp-items="Model.SchemaUserList" id="SchemaId" name="selection" class="form-control">
+                            <option>Välj en användare</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Aktivitet</label>
+                        <select asp-items="Model.ActivityList" id="activityid" name="selection" class="form-control">
+                            <option>Välj en aktivitet</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Plats</label>
+                        <select asp-items="Model.LocationsList" id="locationid" name="selection" class="form-control">
+                            <option>Välj en plats</option>
+                        </select>
+                    </div>*@
+                    <div class="form-group">
+                        <label>Startdatum</label>
+                        <div class="input-group date">
+                            <input type="datetime-local" id="txtStart" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox">
+                            <label><input type="checkbox" id="chkIsFullDay" checked="checked" /> Is Full Day event</label>
+                        </div>
+                    </div>
+                    @*<div class="form-group d-inline">
+                        <label asp-for="Repetition" class="control-label"></label>
+                        <select asp-for="Repetition" asp-items="Html.GetEnumSelectList<Repetition>()"></select>
+                        <span asp-validation-for="Repetition"></span>
+                    </div>*@
+                    <div class="form-group" id="divEndDate">
+                        <label>Slutdatum</label>
+                        <div class="input-group date">
+                            <input type="datetime-local" id="txtEnd" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Beskrivning</label>
+                        <textarea id="txtDescription" rows="3" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Färg</label>
+                        <select id="ddThemeColor" class="form-control">
+                            <option value="">Default</option>
+                            <option value="red">Röd</option>
+                            <option value="blue">Blå</option>
+                            <option value="black">Svart</option>
+                            <option value="green">Grön</option>
+                        </select>
+                    </div>
+                    <button type="button" id="btnSave" class="btn btn-primary">Spara</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stänga</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1/index.global.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/@@fullcalendar/core@6.1.4/locales-all.global.min.js'></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const calendarEl = document.getElementById('calendar');
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'sv',
+                editable: true,
+                selectable: true,
+                eventColor: '#378006',
+                nowIndicator: true,
+                weekNumbers: true,
+                dateClick: function () {
+                    console.log("Click");
+                    const modal = bootstrap.Modal.getOrCreateInstance("#myModalSave");
+                    console.log(modal);
+                    modal?.show();
+                },
+                headerToolbar: {
+                    left: 'prev,today,next',
+                    center: 'title',
+                    right: 'dayGridMonth,listWeek,timeGridWeek,timeGridDay'
+                },
+                editable: true,
+                dayMaxEvents: true,
+            });
+            calendar.render();
+        });
+        $("#btnSave").click(function () {
+            var activity = {
+                id: parseInt($("#hdEventID").val()),
+                start: $("#txtStart").val(),
+                //IsFullDay: $("#chkIsFullDay").is(":checked"),
+                end: $("#txtEnd").val(),
+                schemaId: $("#SchemaId").val(),
+                themeColor: $("#ddThemeColor").val(),
+                activityId: $("#activityid").val(),
+
+            };
+            $.ajax({
+                type: "POST",
+                url: "/SchemaActivity/SaveEvent",
+                data: activity,
+                success: function (events) {
+                    $("#myModalSave").modal("hide");
+                    $("#calendar").fullCalendar("refetchEvents");
+                }
+            });
+        });
+    </script>
+    }
